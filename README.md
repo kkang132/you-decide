@@ -1,6 +1,6 @@
 # you-decide
 
-A *decision model* answers a question by choosing among options you give it, rather than by writing text. You send it a situation and a question with a fixed set of answers; it returns a number for each answer and a measure of how sure it is. It does not act. Your code reads the numbers and decides what happens. This project shows that pattern inside a small application, as described in [*You Decide*](https://www.linkedin.com/pulse/you-decide-kris-kang-o9hpc/): the model scores, the code decides, and a person judges the result. Everything runs locally (no API key, nothing is billed).
+A *decision model* answers a question by choosing among options you give it, rather than by writing text. You send it a situation and a question with a fixed set of answers; it returns a number for each answer and a measure of how sure it is. It does not act. Your code reads the numbers and decides what happens. This project shows that pattern inside a small application, as described in [*decision models are not new*](https://www.kriskang.com/blog/decision-models-are-not-new) (also on LinkedIn as [*You Decide*](https://www.linkedin.com/pulse/you-decide-kris-kang-o9hpc/)): the model scores, the code decides, and a person judges the result. Everything runs locally (no API key, nothing is billed).
 
 ## What it does
 
