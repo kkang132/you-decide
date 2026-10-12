@@ -6,7 +6,8 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "laya>=0.3.21",
+    # Pinned to the 0.4 series: the caveats in ARCHITECTURE.md were checked on 0.4.4.
+    "laya>=0.4.4,<0.5",
     "rich>=15.0.0",
 ]
 
@@ -14,7 +15,9 @@ dependencies = [
 you-decide = "you_decide.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+# `rich` is repeated here so CI can install this group alone (`uv sync --only-group dev`)
+# and run every check without downloading Laya, torch, or CUDA. See .github/workflows/ci.yml.
+dev = ["pytest>=8", "ruff>=0.8", "mypy>=1.13", "rich>=15.0.0"]
 
 [build-system]
 requires = ["hatchling"]
@@ -26,3 +29,19 @@ packages = ["src/you_decide"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+files = ["src"]
+python_version = "3.11"
+warn_unused_ignores = true
+# Laya ships without type hints, and CI does not install it.
+[[tool.mypy.overrides]]
+module = ["laya", "laya.*"]
+ignore_missing_imports = true

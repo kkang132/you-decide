@@ -7,12 +7,12 @@ import json
 import os
 import time
 import warnings
+from collections.abc import Callable
 from dataclasses import asdict
 from pathlib import Path
-from typing import Callable
 
 from rich import box
-from rich.console import Console, Group
+from rich.console import Console, Group, RenderableType
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.table import Table
@@ -69,8 +69,15 @@ def routing_panel(d: Decision) -> Panel:
         dist,
     )
     title = Text("Route to ") + team_label(d.top)
-    return Panel(body, title=title, title_align="left", border_style=COLOURS[d.top],
-                 box=box.ROUNDED, padding=(1, 2), width=PANEL_WIDTH)
+    return Panel(
+        body,
+        title=title,
+        title_align="left",
+        border_style=COLOURS[d.top],
+        box=box.ROUNDED,
+        padding=(1, 2),
+        width=PANEL_WIDTH,
+    )
 
 
 def ask_agree(ask: Ask) -> bool:
@@ -96,10 +103,16 @@ def ask_correct_team(ask: Ask, console: Console, routed_to: str) -> str | None:
 
 def session(backend: Backend, rounds: int, console: Console, ask: Ask | None = None) -> list[Round]:
     ask = ask or (lambda prompt: console.input(prompt))
-    console.print(Padding(
-        Text.assemble(("Type a complaint. ", ""), ("Laya routes it, you judge. ", "bold"),
-                      (f"{rounds} rounds; empty line to stop.", "dim")),
-        (0, 0, 1, 0)))
+    console.print(
+        Padding(
+            Text.assemble(
+                ("Type a complaint. ", ""),
+                ("Laya routes it, you judge. ", "bold"),
+                (f"{rounds} rounds; empty line to stop.", "dim"),
+            ),
+            (0, 0, 1, 0),
+        )
+    )
     played: list[Round] = []
     for n in range(1, rounds + 1):
         label = f" Round {n} of {rounds} "
@@ -143,19 +156,25 @@ def scorecard(played: list[Round], g: Grade) -> Panel:
     letter = Text(f" {g.letter} ", style=f"{GRADE_COLOURS[g.letter]} reverse")
     header.add_row(Group(letter, Text(f"{g.score:.0%}", style="dim", justify="center")), stats)
 
-    parts = [header]
-    missed = [r for r in played if not r.agreed and r.correct_team]
+    parts: list[RenderableType] = [header]
+    missed = [(r, r.correct_team) for r in played if not r.agreed and r.correct_team]
     if missed:
         table = Table(box=box.SIMPLE_HEAD, show_edge=False, pad_edge=False, header_style="dim")
         table.add_column("Laya said", no_wrap=True)
         table.add_column("You said", no_wrap=True)
         table.add_column("Complaint", overflow="ellipsis", no_wrap=True, max_width=48)
-        for r in missed:
-            table.add_row(team_label(r.routed_to), team_label(r.correct_team), Text(r.complaint, style="italic"))
+        for r, correct in missed:
+            table.add_row(team_label(r.routed_to), team_label(correct), Text(r.complaint, style="italic"))
         parts += [Text(""), Text("Where you overruled it", style="bold"), table]
-    return Panel(Group(*parts), title="[bold]Laya's grade[/]", title_align="left",
-                 border_style=GRADE_COLOURS[g.letter].split()[-1], box=box.ROUNDED, padding=(1, 2),
-                 width=PANEL_WIDTH)
+    return Panel(
+        Group(*parts),
+        title="[bold]Laya's grade[/]",
+        title_align="left",
+        border_style=GRADE_COLOURS[g.letter].split()[-1],
+        box=box.ROUNDED,
+        padding=(1, 2),
+        width=PANEL_WIDTH,
+    )
 
 
 def report(played: list[Round], console: Console) -> None:
@@ -182,7 +201,9 @@ def load_laya(console: Console) -> Backend:
         warnings.simplefilter("always")
         backend = LayaBackend()
     if any("uncalibrated" in str(w.message) for w in caught):
-        console.print("[dim]  Note: Laya's shipped calibration is off. Read confidence as a ranking, not a probability.[/]")
+        console.print(
+            "[dim]  Note: Laya's shipped calibration is off. Read confidence as a ranking, not a probability.[/]"
+        )
     return backend
 
 
@@ -194,8 +215,16 @@ def main(argv: list[str] | None = None) -> int:
 
     console = Console()
     console.print()
-    console.print(Padding(Text.assemble(("you-decide", "bold"), ("  ·  ", "dim"),
-                                        ("The model scores. The code decides. You judge.", "italic dim")), (0, 0, 1, 0)))
+    console.print(
+        Padding(
+            Text.assemble(
+                ("you-decide", "bold"),
+                ("  ·  ", "dim"),
+                ("The model scores. The code decides. You judge.", "italic dim"),
+            ),
+            (0, 0, 1, 0),
+        )
+    )
     backend = load_laya(console)
     console.print()
     played = session(backend, args.rounds, console)

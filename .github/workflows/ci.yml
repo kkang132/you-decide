@@ -1,0 +1,78 @@
+# Continuous integration for you-decide.
+#
+# What this is: the deterministic, no-model checks, run on a clean machine for
+# every pull request, and once more after merge to main as a backstop.
+#
+# Why only these: the app needs Laya, which pulls in torch and, on Linux, CUDA:
+# several gigabytes for checks that never call the model. So CI installs only the
+# `dev` dependency group (the check tools and `rich`, about 100 MB) and runs what
+# is reproducible anywhere: lint, format, type check, tests, and the Proofs from
+# AGENTS.md. Nothing here is needed to clone and run the project.
+
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12"
+
+      # Exact versions from the committed lockfile; --locked fails if it is stale.
+      # --only-group dev skips the project's own dependencies, so Laya and torch
+      # are never downloaded.
+      - name: Install
+        run: uv sync --locked --only-group dev
+
+      # ruff lint + ruff format + mypy + pytest.
+      - name: Check
+        run: scripts/check.sh
+
+      # The Proofs from AGENTS.md. In CI the exit code is the pass/fail signal,
+      # so a match must fail the build (the inverse of the human-readable greps).
+      - name: Proof - model called only from backends.py
+        run: |
+          if grep -rnE "^\s*(import laya|from laya)|\.predict\(" src --include=*.py \
+               | grep -v "^src/you_decide/backends.py:"; then
+            echo "LEAK: the model is called outside backends.py"
+            exit 1
+          fi
+          echo "ok: model called only from backends.py"
+
+      - name: Proof - model revision pinned
+        run: |
+          if ! grep -qE '^LAYA_REVISION = "[0-9a-f]{40}"$' src/you_decide/backends.py; then
+            echo "UNPINNED: LAYA_REVISION must be a full commit hash"
+            exit 1
+          fi
+          echo "ok: model revision pinned"
+
+      - name: Proof - reason comes from TEAMS
+        run: |
+          if ! grep -q 'TEAMS\[d\.top\]' src/you_decide/cli.py; then
+            echo "REASON NOT FROM TEAMS: the reason shown must be the team's scope"
+            exit 1
+          fi
+          echo "ok: reason comes from TEAMS"
+
+      - name: Proof - nothing secret tracked
+        run: |
+          if git ls-files | grep -E "^sessions/|(^|/)\.env$|^\.venv/"; then
+            echo "TRACKED: remove it"
+            exit 1
+          fi
+          echo "ok: nothing secret tracked"

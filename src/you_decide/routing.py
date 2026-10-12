@@ -12,9 +12,9 @@ from .decisions import Choice, Decision
 
 TEAMS = {
     "returns": "Returns and exchanges: wrong size or colour, faulty or damaged items, swaps, "
-               "return labels and the returns window.",
+    "return labels and the returns window.",
     "shipping": "Shipping and delivery: tracking, late or lost parcels, delivery addresses, "
-                "couriers and international delivery.",
+    "couriers and international delivery.",
     "billing": "Billing and payments: charges, refunds to a card, invoices, discounts, VAT and currency.",
     "technical": "Website and app: login problems, error messages, crashes, and checkout or page bugs.",
 }

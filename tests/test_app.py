@@ -38,15 +38,27 @@ def output(c):
 
 
 def test_session_records_verdicts_and_corrections():
-    backend = FakeBackend([
-        Decision("returns", {"returns": 0.8, "shipping": 0.2}, 0.7),
-        Decision("shipping", {"shipping": 0.5, "returns": 0.5}, 0.1),
-    ])
+    backend = FakeBackend(
+        [
+            Decision("returns", {"returns": 0.8, "shipping": 0.2}, 0.7),
+            Decision("shipping", {"shipping": 0.5, "returns": 0.5}, 0.1),
+        ]
+    )
     c = console()
-    played = session(backend, 2, c, scripted([
-        "wrong size, can I swap?", "y",
-        "parcel never came", "n", "1",
-    ]))
+    played = session(
+        backend,
+        2,
+        c,
+        scripted(
+            [
+                "wrong size, can I swap?",
+                "y",
+                "parcel never came",
+                "n",
+                "1",
+            ]
+        ),
+    )
     assert [r.agreed for r in played] == [True, False]
     # The routed team (shipping) is not offered, so 1 is returns.
     assert played[1].correct_team == "returns"
@@ -82,8 +94,7 @@ def test_grade_splits_by_confidence():
 
 def test_report_prints_grade_and_overrules():
     c = console()
-    report([Round("x", "returns", 0.9, False, True),
-            Round("parcel lost", "returns", 0.2, True, False, "shipping")], c)
+    report([Round("x", "returns", 0.9, False, True), Round("parcel lost", "returns", 0.2, True, False, "shipping")], c)
     text = output(c)
     assert "Laya's grade" in text and " F " in text
     assert "Where you overruled it" in text and "parcel lost" in text

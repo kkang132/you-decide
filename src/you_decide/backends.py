@@ -22,8 +22,9 @@ LAYA_REVISION = "7b928d828b7b0e022f929d9bd2e44165aa270148"
 
 
 class LayaBackend:
-    def __init__(self, model: str = "convaiinnovations/laya", device: str | None = None,
-                 revision: str | None = LAYA_REVISION):
+    def __init__(
+        self, model: str = "convaiinnovations/laya", device: str | None = None, revision: str | None = LAYA_REVISION
+    ):
         import laya  # heavy import; deferred so the rest of the package loads without torch
 
         self._agent = laya.load(model, device=device, revision=revision)
